@@ -50,6 +50,7 @@
 #include "creatures/players/vocations/vocation.hpp"
 
 #include "enums/account_coins.hpp"
+#include "enums/account_errors.hpp"
 #include "enums/account_group_type.hpp"
 #include "enums/account_type.hpp"
 #include "enums/object_category.hpp"
@@ -3445,6 +3446,7 @@ void ProtocolGame::parseSendResourceBalance() {
 		sliverCount,
 		coreCount
 	);
+	sendTransferableCoinsBalance();
 
 	sendCharmResourcesBalance(
 		player->getCharmPoints(),
@@ -3532,6 +3534,7 @@ void ProtocolGame::parseMarketCancelOffer(NetworkMessage &msg) {
 	}
 
 	updateCoinBalance();
+	sendTransferableCoinsBalance();
 }
 
 void ProtocolGame::parseMarketAcceptOffer(NetworkMessage &msg) {
@@ -3543,6 +3546,7 @@ void ProtocolGame::parseMarketAcceptOffer(NetworkMessage &msg) {
 	}
 
 	updateCoinBalance();
+	sendTransferableCoinsBalance();
 }
 
 void ProtocolGame::parseModalWindowAnswer(NetworkMessage &msg) {
@@ -5529,6 +5533,17 @@ void ProtocolGame::sendResourcesBalance(uint64_t money /*= 0*/, uint64_t bank /*
 	sendResourceBalance(RESOURCE_FORGE_CORES, forgeCores);
 }
 
+void ProtocolGame::sendTransferableCoinsBalance() {
+	if (!player || !player->getAccount()) {
+		return;
+	}
+
+	const auto [transferableCoins, errTCoin] = player->getAccount()->getCoins(CoinType::Transferable);
+	if (errTCoin == AccountErrors_t::Ok) {
+		sendResourceBalance(RESOURCE_COIN_TRANSFERRABLE, transferableCoins);
+	}
+}
+
 void ProtocolGame::sendResourceBalance(Resource_t resourceType, uint64_t value) {
 	if (oldProtocol && resourceType > RESOURCE_PREY_CARDS) {
 		return;
@@ -5685,6 +5700,7 @@ void ProtocolGame::sendMarketEnter(uint32_t depotId) {
 
 	updateCoinBalance();
 	sendResourcesBalance(player->getMoney(), player->getBankBalance(), player->getPreyCards(), player->getTaskHuntingPoints());
+	sendTransferableCoinsBalance();
 }
 
 void ProtocolGame::sendCoinBalance() {
@@ -5782,6 +5798,7 @@ void ProtocolGame::sendMarketBrowseItem(uint16_t itemId, const MarketOfferList &
 	}
 
 	updateCoinBalance();
+	sendTransferableCoinsBalance();
 	writeToOutputBuffer(msg);
 }
 
