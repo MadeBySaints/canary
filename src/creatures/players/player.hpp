@@ -1362,14 +1362,16 @@ public:
 	std::pair<std::vector<std::shared_ptr<Item>>, std::map<uint16_t, std::map<uint8_t, uint32_t>>> requestLockerItems(const std::shared_ptr<DepotLocker> &depotLocker, bool sendToClient = false, uint8_t tier = 0) const;
 
 	/**
-	This function returns a pair of an array of items and a 16-bit integer from a DepotLocker instance, a 8-bit byte and a 16-bit integer.
+	This function returns a pair of an array of items and a 32-bit integer from a DepotLocker instance, a 8-bit byte and a 16-bit integer.
 	@param depotLocker The instance of DepotLocker from which to retrieve items.
 	@param tier The 8-bit byte that specifies the level of the tier to search.
 	@param itemId The 16-bit integer that specifies the ID of the item to search for.
-	@return A pair of an array of items and a 16-bit integer, where the array of items is filled with all items from the
-	locker with the specified id and the 16-bit integer is the total items found.
+	@return A pair of an array of items and a 32-bit integer, where the array of items is filled with all items from the
+	locker with the specified id and the 32-bit integer is the total item quantity found (summed across all matching
+	stacks, not the number of stacks, so it needs to be wider than uint16_t to avoid overflow for large stackable
+	quantities such as gold coins, runes, or ammunition).
 	*/
-	std::pair<std::vector<std::shared_ptr<Item>>, uint16_t> getLockerItemsAndCountById(
+	std::pair<std::vector<std::shared_ptr<Item>>, uint32_t> getLockerItemsAndCountById(
 		const std::shared_ptr<DepotLocker> &depotLocker,
 		uint8_t tier,
 		uint16_t itemId
