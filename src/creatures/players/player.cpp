@@ -10748,10 +10748,10 @@ std::pair<std::vector<std::shared_ptr<Item>>, std::map<uint16_t, std::map<uint8_
     locker with the specified id and the 16-bit integer is the total items found.
     */
 
-std::pair<std::vector<std::shared_ptr<Item>>, uint16_t> Player::getLockerItemsAndCountById(const std::shared_ptr<DepotLocker> &depotLocker, uint8_t tier, uint16_t itemId) const {
+std::pair<std::vector<std::shared_ptr<Item>>, uint32_t> Player::getLockerItemsAndCountById(const std::shared_ptr<DepotLocker> &depotLocker, uint8_t tier, uint16_t itemId) const {
 	std::vector<std::shared_ptr<Item>> lockerItems;
 	const auto &[itemVector, itemMap] = requestLockerItems(depotLocker, false, tier);
-	uint16_t totalCount = 0;
+	uint32_t totalCount = 0;
 	for (const auto &item : itemVector) {
 		if (!item || item->getID() != itemId) {
 			continue;
