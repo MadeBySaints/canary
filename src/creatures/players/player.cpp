@@ -10758,7 +10758,7 @@ std::pair<std::vector<std::shared_ptr<Item>>, uint32_t> Player::getLockerItemsAn
 			continue;
 		}
 
-		totalCount++;
+		totalCount += item->getItemCount();
 		lockerItems.emplace_back(item);
 	}
 
