@@ -89,6 +89,15 @@ return {
 			type = GameStore.OfferTypes.OFFER_TYPE_OUTFIT,
 		},
 		{
+			icons = { "Outfit_Darklight_Evoker_Male_Addon_3.png", "Outfit_Darklight_Evoker_Female_Addon_3.png" },
+			name = "Full Darklight Evoker Outfit",
+			price = 840,
+			sexId = { female = 1676, male = 1675 },
+			addon = 3,
+			description = "{character}\n{info} colours can be changed using the Outfit dialog\n{info} includes basic outfit and 2 addons which can be selected individually\n\n<i>Dance around flickering fires in the Darklight Evoker outfit while singing unholy chants to praise witchcraft and wizardry. Your faithful bat will always be by your side.</i>",
+			type = GameStore.OfferTypes.OFFER_TYPE_OUTFIT,
+		},
+		{
 			icons = { "Outfit_Death_Herald_Male_Addon_3.png", "Outfit_Death_Herald_Female_Addon_3.png" },
 			name = "Full Death Herald Outfit",
 			price = 600,
