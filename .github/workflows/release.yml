@@ -483,16 +483,13 @@ jobs:
           git add "${tracked_paths[@]}"
           git commit -m "chore: update release metadata to ${RELEASE_VERSION}"
 
-          branch_sha="$(git rev-parse HEAD)"
-          if gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/${branch}" >/dev/null 2>&1; then
-            gh api -X PATCH "repos/${GITHUB_REPOSITORY}/git/refs/heads/${branch}" \
-              -f "sha=${branch_sha}" \
-              -F force=true >/dev/null
-          else
-            gh api -X POST "repos/${GITHUB_REPOSITORY}/git/refs" \
-              -f "ref=refs/heads/${branch}" \
-              -f "sha=${branch_sha}" >/dev/null
-          fi
+          # Push the actual commit object, not just the ref: creating/updating
+          # the ref via the Git Data API (as this step used to) requires the
+          # target SHA to already exist on the remote, which a local-only
+          # commit never satisfies - it always fails with "Object does not
+          # exist" (422). A normal push uploads the objects and the ref together.
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            "HEAD:refs/heads/${branch}" --force
 
           echo "branch=${branch}" >> "$GITHUB_OUTPUT"
 
