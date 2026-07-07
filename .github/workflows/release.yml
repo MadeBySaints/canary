@@ -355,9 +355,16 @@ jobs:
             docker/DOCKER.md \
             docker/quickstart/myaac/bootstrap.php
           git commit -m "chore: update release metadata to ${RELEASE_VERSION}"
-          git push --force-with-lease origin "HEAD:${branch}"
 
-          echo "branch=${branch}" >> "$GITHUB_ENV"
+          # Push the actual commit object, not just the ref: creating/updating
+          # the ref via the Git Data API (as this step used to) requires the
+          # target SHA to already exist on the remote, which a local-only
+          # commit never satisfies - it always fails with "Object does not
+          # exist" (422). A normal push uploads the objects and the ref together.
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            "HEAD:refs/heads/${branch}" --force
+
+          echo "branch=${branch}" >> "$GITHUB_OUTPUT"
 
       - name: Open or update pull request
         if: steps.metadata.outputs.has_changes == 'true'
