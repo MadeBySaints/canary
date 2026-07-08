@@ -11054,6 +11054,38 @@ void Player::forgeFuseItems(ForgeAction_t actionType, uint16_t firstItemId, uint
 		}
 	}
 
+	// Confirm both forging items can actually be removed before committing to
+	// anything (granting a chest, spending dust/cores/gold). Without this,
+	// a removal failure on the second item after the chest was already
+	// granted and the first item already consumed left the player with an
+	// empty chest, a missing item, and no resources refunded.
+	if (g_game().internalRemoveItem(firstForgingItem, 1, true) != RETURNVALUE_NOERROR) {
+		g_logger().error("[Log 1] Failed to remove forge item {} from player with name {}", firstItemId, getName());
+		sendForgeError(RETURNVALUE_CONTACTADMINISTRATOR);
+		return;
+	}
+	if (g_game().internalRemoveItem(secondForgingItem, 1, true) != RETURNVALUE_NOERROR) {
+		g_logger().error("[Log 2] Failed to remove forge item {} from player with name {}", secondItemId, getName());
+		sendForgeError(RETURNVALUE_CONTACTADMINISTRATOR);
+		return;
+	}
+
+	ReturnValue returnValue = RETURNVALUE_NOERROR;
+	if (returnValue = g_game().internalRemoveItem(firstForgingItem, 1);
+	    returnValue != RETURNVALUE_NOERROR) {
+		g_logger().error("[Log 1] Failed to remove forge item {} from player with name {}", firstItemId, getName());
+		sendCancelMessage(getReturnMessage(returnValue));
+		sendForgeError(RETURNVALUE_CONTACTADMINISTRATOR);
+		return;
+	}
+	if (returnValue = g_game().internalRemoveItem(secondForgingItem, 1);
+	    returnValue != RETURNVALUE_NOERROR) {
+		g_logger().error("[Log 2] Failed to remove forge item {} from player with name {}", secondItemId, getName());
+		sendCancelMessage(getReturnMessage(returnValue));
+		sendForgeError(RETURNVALUE_CONTACTADMINISTRATOR);
+		return;
+	}
+
 	const auto &exaltationChest = Item::CreateItem(ITEM_EXALTATION_CHEST, 1);
 	if (!exaltationChest) {
 		g_logger().error("Failed to create exaltation chest");
@@ -11067,25 +11099,10 @@ void Player::forgeFuseItems(ForgeAction_t actionType, uint16_t firstItemId, uint
 		return;
 	}
 
-	auto returnValue = g_game().internalAddItem(static_self_cast<Player>(), exaltationContainer, INDEX_WHEREEVER);
-	if (returnValue != RETURNVALUE_NOERROR) {
+	if (returnValue = g_game().internalAddItem(static_self_cast<Player>(), exaltationContainer, INDEX_WHEREEVER);
+	    returnValue != RETURNVALUE_NOERROR) {
 		g_logger().error("Failed to add exaltation chest to player with name {}", getName());
 		sendForgeError(returnValue);
-		return;
-	}
-
-	if (returnValue = g_game().internalRemoveItem(firstForgingItem, 1);
-	    returnValue != RETURNVALUE_NOERROR) {
-		g_logger().error("[Log 1] Failed to remove forge item {} from player with name {}", firstItemId, getName());
-		sendCancelMessage(getReturnMessage(returnValue));
-		sendForgeError(RETURNVALUE_CONTACTADMINISTRATOR);
-		return;
-	}
-	if (returnValue = g_game().internalRemoveItem(secondForgingItem, 1);
-	    returnValue != RETURNVALUE_NOERROR) {
-		g_logger().error("[Log 2] Failed to remove forge item {} from player with name {}", secondItemId, getName());
-		sendCancelMessage(getReturnMessage(returnValue));
-		sendForgeError(RETURNVALUE_CONTACTADMINISTRATOR);
 		return;
 	}
 
@@ -11343,29 +11360,24 @@ void Player::forgeTransferItemTier(ForgeAction_t actionType, uint16_t donorItemI
 		return;
 	}
 
-	// Same reasoning as forgeFuseItems: place the exaltation chest in the
-	// player's inventory only after all read-only checks pass.
-	const auto &exaltationChest = Item::CreateItem(ITEM_EXALTATION_CHEST, 1);
-	if (!exaltationChest) {
-		g_logger().error("Exaltation chest is nullptr");
+	// Confirm both items can actually be removed before committing to
+	// anything (granting a chest, spending dust/cores/gold). See
+	// forgeFuseItems for why this matters: without it, a removal failure on
+	// the second item after the chest was already granted and the first
+	// item already consumed left the player with an empty chest, a missing
+	// item, and no resources refunded.
+	if (g_game().internalRemoveItem(donorItem, 1, true) != RETURNVALUE_NOERROR) {
+		g_logger().error("[Log 1] Failed to remove transfer item {} from player with name {}", donorItemId, getName());
 		sendForgeError(RETURNVALUE_CONTACTADMINISTRATOR);
 		return;
 	}
-	const auto &exaltationContainer = exaltationChest->getContainer();
-	if (!exaltationContainer) {
-		g_logger().error("Exaltation container is nullptr");
+	if (g_game().internalRemoveItem(receiveItem, 1, true) != RETURNVALUE_NOERROR) {
+		g_logger().error("[Log 2] Failed to remove transfer item {} from player with name {}", receiveItemId, getName());
 		sendForgeError(RETURNVALUE_CONTACTADMINISTRATOR);
 		return;
 	}
 
-	auto returnValue = g_game().internalAddItem(static_self_cast<Player>(), exaltationContainer, INDEX_WHEREEVER);
-	if (returnValue != RETURNVALUE_NOERROR) {
-		g_logger().error("Failed to add exaltation chest to player with name {}", getName());
-		sendForgeError(returnValue);
-		return;
-	}
-
-	// All resources validated — begin mutations.
+	ReturnValue returnValue = RETURNVALUE_NOERROR;
 	if (returnValue = g_game().internalRemoveItem(donorItem, 1);
 	    returnValue != RETURNVALUE_NOERROR) {
 		g_logger().error("[Log 1] Failed to remove transfer item {} from player with name {}", donorItemId, getName());
@@ -11379,6 +11391,28 @@ void Player::forgeTransferItemTier(ForgeAction_t actionType, uint16_t donorItemI
 		g_logger().error("[Log 2] Failed to remove transfer item {} from player with name {}", receiveItemId, getName());
 		sendCancelMessage(getReturnMessage(returnValue));
 		sendForgeError(RETURNVALUE_CONTACTADMINISTRATOR);
+		return;
+	}
+
+	// Place the exaltation chest in the player's inventory only after both
+	// original items are confirmed gone.
+	const auto &exaltationChest = Item::CreateItem(ITEM_EXALTATION_CHEST, 1);
+	if (!exaltationChest) {
+		g_logger().error("Exaltation chest is nullptr");
+		sendForgeError(RETURNVALUE_CONTACTADMINISTRATOR);
+		return;
+	}
+	const auto &exaltationContainer = exaltationChest->getContainer();
+	if (!exaltationContainer) {
+		g_logger().error("Exaltation container is nullptr");
+		sendForgeError(RETURNVALUE_CONTACTADMINISTRATOR);
+		return;
+	}
+
+	if (returnValue = g_game().internalAddItem(static_self_cast<Player>(), exaltationContainer, INDEX_WHEREEVER);
+	    returnValue != RETURNVALUE_NOERROR) {
+		g_logger().error("Failed to add exaltation chest to player with name {}", getName());
+		sendForgeError(returnValue);
 		return;
 	}
 
