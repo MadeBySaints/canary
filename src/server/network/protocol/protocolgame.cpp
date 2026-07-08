@@ -3524,6 +3524,9 @@ void ProtocolGame::parseMarketCreateOffer(NetworkMessage &msg) {
 	if (amount > 0 && price > 0) {
 		g_game().playerCreateMarketOffer(player->getID(), type, itemId, amount, price, itemTier, anonymous);
 	}
+
+	updateCoinBalance();
+	sendTransferableCoinsBalance();
 }
 
 void ProtocolGame::parseMarketCancelOffer(NetworkMessage &msg) {
@@ -5534,6 +5537,10 @@ void ProtocolGame::sendResourcesBalance(uint64_t money /*= 0*/, uint64_t bank /*
 }
 
 void ProtocolGame::sendTransferableCoinsBalance() {
+	if (m_isLivestreamViewer) {
+		return;
+	}
+
 	if (!player || !player->getAccount()) {
 		return;
 	}
