@@ -9980,6 +9980,16 @@ void Game::playerBrowseMarket(uint32_t playerId, uint16_t itemId, uint8_t tier) 
 		return;
 	}
 
+	// Refresh the client's locker/stash item counts before showing this item's
+	// offers: depotLockerItems on the client is only populated once, when the
+	// market window first opens (onMarketEnter), and otherwise only refreshed
+	// after a create-offer attempt completes. Without this, the "Amount"
+	// slider's max is computed from a stale snapshot if the player's held
+	// quantity changed (e.g. stashed more) after opening the market but before
+	// selecting this item, silently capping offers below what's actually
+	// available.
+	player->sendMarketEnter(player->getLastDepotId());
+
 	const MarketOfferList &buyOffers = IOMarket::getActiveOffers(MARKETACTION_BUY, it.id, tier);
 	const MarketOfferList &sellOffers = IOMarket::getActiveOffers(MARKETACTION_SELL, it.id, tier);
 	player->sendMarketBrowseItem(it.id, buyOffers, sellOffers, tier);
